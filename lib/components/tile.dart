@@ -76,7 +76,7 @@ class _TileState extends State<Tile> with SingleTickerProviderStateMixin {
           _answerStage = notifier.tilesEntered[widget.index].answerStage;
 
           // Animasyonu tetiklemek için ENTER basıldığında hepsi dönecek
-          if (notifier.backOrEnterTapped == true &&
+          if (notifier.enterTapped == true &&
               notifier.notEnoughLetters == false) {
             final delay = widget.index - (notifier.currentRow - 1) * 5;
             Future.delayed(Duration(milliseconds: 300 * delay), () {
