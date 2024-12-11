@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> {
       controller.setCorrectWord(word: _word);
       controller.resetGame(); // Reset game state when starting a new round
     });
+    super.initState();
   }
 
   @override

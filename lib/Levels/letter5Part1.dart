@@ -28,6 +28,7 @@ class _Letter5Part1State extends State<Letter5Part1> {
       controller.setCorrectWord(word: _word);
       controller.resetGame(); // Reset game state when starting a new round
     });
+    super.initState();
   }
 
   @override
