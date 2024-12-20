@@ -4,7 +4,7 @@ import 'package:lingogame/constants/answer_stages.dart';
 import 'package:lingogame/constants/keyboardKeyState.dart';
 import 'package:lingogame/constants/keys_map.dart';
 import 'package:lingogame/models/tile_model.dart';
-import 'package:lingogame/constants/words.dart'; // Kelime listesi burada
+import 'package:lingogame/constants/words.dart'; // Kelime listesi buradadır
 
 class Controller extends ChangeNotifier {
   // Oyun durum değişkenleri
@@ -172,7 +172,7 @@ class Controller extends ChangeNotifier {
 
     // Animasyonu tetikle
     checkLine = true; // Şu anki satır için animasyonu başlat
-    notifyListeners(); // Animasyonu tetikle
+    notifyListeners(); // Animasyonu tetiklemek
 
     // Her satır için animasyon bittiğinde bir sonraki satıra geçilir
     if (checkLine) {
