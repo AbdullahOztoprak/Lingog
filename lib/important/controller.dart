@@ -45,6 +45,7 @@ class Controller extends ChangeNotifier {
   // Doğru kelimeyi ayarla
   void setCorrectWord({required String word}) {
     correctWord = word.toUpperCase();
+    print("Correct word is: $correctWord");
     _resetTimer();
     if (tilesEntered.isEmpty) {
       // _firstLetter();
@@ -64,6 +65,8 @@ class Controller extends ChangeNotifier {
     if (gameTime > 0) {
       if (value == 'ENTER') {
         _handleEnter();
+        checkLine = true; // Animasyonu tetiklemek için true yapıyoruz
+        notifyListeners(); // UI'yi güncelliyoruz
       } else if (value == 'BACK') {
         _handleBackspace();
       } else {
@@ -126,48 +129,32 @@ class Controller extends ChangeNotifier {
     final guessedWord = _getCurrentRowWord();
     final remainingCorrect = List.of(correctWord.characters);
 
-    // İlk satırda özel kontrol
-    if (currentRow == 0) {
-      if (guessedWord[0] != correctWord[0]) {
-        _markAllIncorrect(); // İlk harf yanlışsa, tüm harfler kırmızı olur
-        _endGame(false); // Oyunu sonlandır
-        _stopTimer();
-        amount = 0;
-      } else if (!words.contains(guessedWord)) {
-        _markAllIncorrect(); // Kelime listede yoksa, tüm harfler kırmızı olur
-        _endGame(false); // Oyunu sonlandır
-        _stopTimer();
-        amount = 0;
-      } else if (guessedWord == correctWord) {
-        _markAllCorrect(); // Tüm harfler doğru ise, yeşil olur
-        _endGame(true); // Kazanılırsa oyun sonlanır
-        _stopTimer();
-      } else {
-        _checkLetters(
-            guessedWord, remainingCorrect); // Diğer harfler için normal kontrol
-        amount -= 400;
-        currentRow++;
-        if (currentRow == 6) {
-          _endGame(false); // 6. satırda hâlâ kazanılmadıysa, oyun sonlanır
-          _stopTimer();
-        }
-      }
+    if (guessedWord[0] != correctWord[0]) {
+      _markAllIncorrect(); // İlk harf yanlışsa, tüm harfler kırmızı olur
+      _endGame(false); // Oyunu sonlandır
+      _stopTimer();
+      amount = 0;
+    } else if (!words.contains(guessedWord)) {
+      _markAllIncorrect(); // Kelime listede yoksa, tüm harfler kırmızı olur
+      _endGame(false); // Oyunu sonlandır
+      _stopTimer();
+      amount = 0;
+    } else if (currentRow == 6) {
+      _endGame(false); // 6. satırda hâlâ kazanılmadıysa, oyun sonlanır
+      _stopTimer();
+      amount = 0;
+    } else if (guessedWord == correctWord) {
+      _markAllCorrect(); // Tüm harfler doğru ise, yeşil olur
+      _endGame(true); // Kazanılırsa oyun sonlanır
+      _stopTimer();
     } else {
-      // Diğer satırlarda normal işlem
-      if (guessedWord == correctWord) {
-        _markAllCorrect();
-        _endGame(true); // Kazanılırsa oyun sonlanır
-        _stopTimer();
-      } else {
-        _checkLetters(guessedWord, remainingCorrect);
-        amount -= 400;
-        currentRow++;
-        if (currentRow == 6) {
-          _endGame(false); // 6. satırda hâlâ kazanılmadıysa, oyun sonlanır
-          _stopTimer();
-          amount = 0;
-        }
-      }
+      _checkLetters(
+          guessedWord, remainingCorrect); // Diğer harfler için normal kontrol
+      amount -= 400;
+      currentRow++;
+      // Animasyonu tetikle
+      checkLine = true; // Şu anki satır için animasyonu başlat
+      notifyListeners(); // Animasyonu tetiklemek
     }
 
     // Animasyonu tetikle
@@ -290,8 +277,10 @@ class Controller extends ChangeNotifier {
 
   void _endGame(bool win) {
     gameCompleted = true;
-    gameWon = win;
     _stopTimer(); // Zamanlayıcıyı durduruyoruz
+    // Animasyonu tetikle
+    checkLine = true; // Şu anki satır için animasyonu başlat
+    notifyListeners(); // Animasyonu tetiklemek
 
     if (!win) {
       // Eğer oyun kaybedildiyse amount'u sıfırlıyoruz
