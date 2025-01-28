@@ -46,24 +46,16 @@ class _TileState extends State<Tile> with SingleTickerProviderStateMixin {
   }
 
   void _updateColors(AnswerStage stage) {
-    switch (stage) {
-      case AnswerStage.correct:
-        _backgroundColor = correctGreen; // Doğru renk
-        break;
-      case AnswerStage.contains:
-        _backgroundColor = containsYellow; // İçeren renk
-        break;
-      case AnswerStage.incorrect:
-        _backgroundColor = incorrect; // Yanlış renk
-        break;
-      case AnswerStage.falseRed:
-        _backgroundColor = falseRed; // Kötü giriş (falseRed) renk
-        break;
-      case AnswerStage.notAnswered:
-      default:
-        _backgroundColor =
-            Colors.transparent; // Yanıtlanmamış durumda, renk yok
-        break;
+    if (stage == AnswerStage.correct) {
+      _backgroundColor = correctGreen; // Doğru renk
+    } else if (stage == AnswerStage.contains) {
+      _backgroundColor = containsYellow; // İçeren renk
+    } else if (stage == AnswerStage.incorrect) {
+      _backgroundColor = incorrect; // Yanlış renk
+    } else if (stage == AnswerStage.falseRed) {
+      _backgroundColor = falseRed; // Kötü giriş (falseRed) renk
+    } else {
+      _backgroundColor = Colors.transparent; // Yanıtlanmamış durumda, renk yok
     }
   }
 
@@ -76,24 +68,23 @@ class _TileState extends State<Tile> with SingleTickerProviderStateMixin {
           _answerStage = notifier.tilesEntered[widget.index].answerStage;
 
           // Animasyonu tetiklemek için ENTER basıldığında hepsi dönecek
-          if (notifier.enterTapped == true &&
-              notifier.notEnoughLetters == false) {
+          if (notifier.checkLine) {
             final delay = widget.index - (notifier.currentRow - 1) * 5;
             Future.delayed(Duration(milliseconds: 300 * delay), () {
               if (mounted) {
                 _animationController.forward();
               }
+              notifier.checkLine = false;
             });
-            notifier.checkLine = false;
-          }
 
-          _updateColors(_answerStage);
+            _updateColors(_answerStage);
+          }
 
           return AnimatedBuilder(
             animation: _animationController,
             builder: (_, child) {
               double flip = 0;
-              if (_animationController.value > 0.5) {
+              if (_animationController.value > 0.50) {
                 flip = pi;
               }
 
@@ -120,15 +111,16 @@ class _TileState extends State<Tile> with SingleTickerProviderStateMixin {
                               _text,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 48,
+                                fontSize: 48, // Font size for the flipped side
                                 fontWeight: FontWeight.bold,
                               ),
                             )
                           : Text(
                               _text,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 36,
+                              style: TextStyle(
+                                color: Colors
+                                    .grey[800], // Font color for the front
+                                fontSize: 36, // Font size for the front
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
