@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:lingogame/constants/answer_stages.dart';
 import 'package:lingogame/constants/keyboardKeyState.dart';
+// import 'package:lingogame/constants/keys_map.dart';
 import 'package:lingogame/models/tile_model.dart';
-import 'package:lingogame/constants/words.dart'; // Kelime listesi burada
+import 'package:lingogame/constants/words.dart'; // Kelime listesi buradadır.
 
 class Controller extends ChangeNotifier {
   // Oyun durum değişkenleri
   bool checkLine = false;
   bool backOrEnterTapped = false;
-  bool enterTapped = false;
   bool gameWon = false;
   bool gameCompleted = false;
   bool notEnoughLetters = false;
@@ -18,9 +18,6 @@ class Controller extends ChangeNotifier {
 
   // keysMap harflerin durumlarını tutan bir map olmalı
   Map<String, KeyboardKeyState> keysMap = {};
-
-  // Daha önceki tahminleri saklamak için bir set oluştur
-  final Set<String> previousGuesses = {};
 
   // Klavye durumlarını başlat
   void initKeyStates() {
@@ -48,8 +45,11 @@ class Controller extends ChangeNotifier {
   // Doğru kelimeyi ayarla
   void setCorrectWord({required String word}) {
     correctWord = word.toUpperCase();
+    print("Correct word is: $correctWord");
     _resetTimer();
-    if (tilesEntered.isEmpty) {}
+    if (tilesEntered.isEmpty) {
+      // _firstLetter();
+    }
   }
 
   // Harf girişlerini işle
@@ -60,14 +60,13 @@ class Controller extends ChangeNotifier {
     }
 
     backOrEnterTapped = value == 'ENTER' || value == 'BACK';
-    enterTapped = value == 'ENTER';
     notEnoughLetters = false;
 
     if (gameTime > 0) {
       if (value == 'ENTER') {
         _handleEnter();
-        // checkLine = true; // Şu anki satır için animasyonu başlat
-        // notifyListeners(); // Animasyonu tetikle
+        checkLine = true; // Animasyonu tetiklemek için true yapıyoruz
+        notifyListeners(); // UI'yi güncelliyoruz
       } else if (value == 'BACK') {
         _handleBackspace();
       } else {
@@ -84,25 +83,19 @@ class Controller extends ChangeNotifier {
   void _handleEnter() {
     if (currentTile == 5 * (currentRow + 1)) {
       backOrEnterTapped = true;
-      enterTapped = true;
+      checkLine = true; // Trigger animation for next round
       _processGuess();
       _resetTimer(); // Timer'ı sıfırlayıp 10'dan başlat
-      // checkLine = true; // Şu anki satır için animasyonu başlat
     } else {
       notEnoughLetters = true;
     }
   }
 
   void _handleBackspace() {
-    if (currentRow == 0 && currentTile == 1) {
-      return;
-    } else {
-      backOrEnterTapped = true;
-      enterTapped = false;
-      if (currentTile > 5 * currentRow) {
-        currentTile--;
-        tilesEntered.removeLast();
-      }
+    backOrEnterTapped = true;
+    if (currentTile > 5 * currentRow) {
+      currentTile--;
+      tilesEntered.removeLast();
     }
   }
 
@@ -116,21 +109,21 @@ class Controller extends ChangeNotifier {
     }
   }
 
-  void _firstLetter() {
-    //İlk harfi otomatik doldur, ancak yalnızca ilk satırda olsun
-    if (currentRow == 0) {
-      tilesEntered.add(TileModel(
-        letter: correctWord[0],
-        answerStage: AnswerStage.correct,
-      ));
-      currentTile++;
-      _updateKeyColor(correctWord[0], KeyboardKeyState.kcorrect);
+  // void _firstLetter() {
+  //   İlk harfi otomatik doldur, ancak yalnızca ilk satırda olsun
+  //   if (currentRow == 0) {
+  //     tilesEntered.add(TileModel(
+  //       letter: correctWord[0],
+  //       answerStage: AnswerStage.correct,
+  //     ));
+  //     currentTile++;
+  //     _updateKeyColor(correctWord[0], KeyboardKeyState.kcorrect);
 
-      //İlk harf doğruysa animasyonu tetikle
-      checkLine = true; // Animasyon tetikleniyor
-      notifyListeners(); // Animasyonun hemen görünmesi için notifyListeners()
-    }
-  }
+  //     İlk harf doğruysa animasyonu tetikle
+  //     checkLine = true; // Animasyon tetikleniyor
+  //     notifyListeners(); // Animasyonun hemen görünmesi için notifyListeners()
+  //   }
+  // }
 
   void _processGuess() {
     final guessedWord = _getCurrentRowWord();
@@ -146,9 +139,8 @@ class Controller extends ChangeNotifier {
       _endGame(false); // Oyunu sonlandır
       _stopTimer();
       amount = 0;
-    } else if (previousGuesses.contains(guessedWord)) {
-      _markAllIncorrect(); // Daha önce yapılan tahmin
-      _endGame(false); // Oyunu sonlandır
+    } else if (currentRow == 6) {
+      _endGame(false); // 6. satırda hâlâ kazanılmadıysa, oyun sonlanır
       _stopTimer();
       amount = 0;
     } else if (guessedWord == correctWord) {
@@ -158,22 +150,29 @@ class Controller extends ChangeNotifier {
     } else {
       _checkLetters(
           guessedWord, remainingCorrect); // Diğer harfler için normal kontrol
-      checkLine = true; // Şu anki satır için animasyonu başlat
-      notifyListeners(); // Animasyonu tetikle
       amount -= 400;
       currentRow++;
-      if (currentRow == 5) {
-        _endGame(false); // 6. satırda hâlâ kazanılmadıysa, oyun sonlanır
-        _stopTimer();
-      }
+      // Animasyonu tetikle
+      checkLine = true; // Şu anki satır için animasyonu başlat
+      notifyListeners(); // Animasyonu tetiklemek
     }
-
-    // Yeni tahmini previousGuesses setine ekle
-    previousGuesses.add(guessedWord);
 
     // Animasyonu tetikle
     checkLine = true; // Şu anki satır için animasyonu başlat
-    notifyListeners(); // Animasyonu tetikle
+    notifyListeners(); // Animasyonu tetiklemek
+
+    // Her satır için animasyon bittiğinde bir sonraki satıra geçilir
+    if (checkLine) {
+      _handleNextRow();
+    }
+  }
+
+  void _handleNextRow() {
+    // Satır tamamlandığında bir sonraki satıra geçilir, ancak önceki satır tekrar animasyona girmez.
+    if (currentRow < 6) {
+      checkLine = false; // Animasyon tamamlandı
+      notifyListeners(); // Animasyon tamamlandığını bildir
+    }
   }
 
   String _getCurrentRowWord() {
@@ -187,22 +186,19 @@ class Controller extends ChangeNotifier {
     for (int i = currentRow * 5; i < (currentRow * 5) + 5; i++) {
       tilesEntered[i].answerStage = AnswerStage.correct;
       _updateKeyColor(tilesEntered[i].letter, KeyboardKeyState.kcorrect);
+      checkLine = true; // Trigger animation for next round
     }
-    gameCompleted = true;
     gameWon = true;
     _stopTimer();
-    notifyListeners();
   }
 
   void _markAllIncorrect() {
     for (int i = currentRow * 5; i < (currentRow * 5) + 5; i++) {
-      tilesEntered[i].answerStage = AnswerStage.falseRed;
+      tilesEntered[i].answerStage = AnswerStage.incorrect;
       _updateKeyColor(tilesEntered[i].letter, KeyboardKeyState.kincorrect);
+      checkLine = true; // Trigger animation for next round
+      _stopTimer();
     }
-    gameCompleted = true;
-    gameWon = false;
-    _stopTimer();
-    notifyListeners();
   }
 
   void _checkLetters(String guessedWord, List<String> remainingCorrect) {
@@ -212,9 +208,8 @@ class Controller extends ChangeNotifier {
 
       // Harf doğru pozisyonda ise yeşil yapılır
       if (guessedWord[i] == correctWord[i]) {
-        remainingCorrect.remove(guessedWord[i]);
         tilesEntered[tileIndex].answerStage = AnswerStage.correct;
-        checkLine = false;
+        remainingCorrect.remove(guessedWord[i]);
         _updateKeyColor(guessedWord[i],
             KeyboardKeyState.kcorrect); // Her harfe animasyon ekle
       } else {
@@ -232,13 +227,14 @@ class Controller extends ChangeNotifier {
       // Harf doğru kelimede var ama yanlış pozisyondaysa sarı yapılır
       if (remainingCorrect.contains(guessedWord[i]) &&
           guessedWord[i] != correctWord[i]) {
-        remainingCorrect.remove(guessedWord[i]);
         tilesEntered[tileIndex].answerStage = AnswerStage.contains;
-
+        remainingCorrect.remove(guessedWord[i]);
         _updateKeyColor(guessedWord[i],
             KeyboardKeyState.kcontains); // Her harfe animasyon ekle
       }
     }
+
+    checkLine = true; // Trigger animation for the current row
   }
 
   void _updateKeyColor(String key, KeyboardKeyState newStage) {
@@ -281,8 +277,10 @@ class Controller extends ChangeNotifier {
 
   void _endGame(bool win) {
     gameCompleted = true;
-    gameWon = win;
     _stopTimer(); // Zamanlayıcıyı durduruyoruz
+    // Animasyonu tetikle
+    checkLine = true; // Şu anki satır için animasyonu başlat
+    notifyListeners(); // Animasyonu tetiklemek
 
     if (!win) {
       // Eğer oyun kaybedildiyse amount'u sıfırlıyoruz
@@ -317,11 +315,9 @@ class Controller extends ChangeNotifier {
     notEnoughLetters = false;
     checkLine = false;
     backOrEnterTapped = false;
-    enterTapped = false;
     amount = 2000;
-    _firstLetter();
+    // _firstLetter();
     resetKeyboard();
-    previousGuesses.clear();
     _resetTimer();
     notifyListeners();
   }
