@@ -16,7 +16,7 @@ class Controller extends ChangeNotifier {
   int amount = 2000;
   int totalEarnings = 0;
 
-  // keysMap harflerin durumlarını tutan bir map olmal
+  // keysMap harflerin durumlarını tutan bir map olmalı
   Map<String, KeyboardKeyState> keysMap = {};
 
   // Klavye durumlarını başlat
