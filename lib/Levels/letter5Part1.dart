@@ -23,12 +23,12 @@ class _Letter5Part1State extends State<Letter5Part1> {
     super.initState();
     final r = Random().nextInt(words.length);
     _word = words[r];
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = Provider.of<Controller>(context, listen: false);
-      controller.setCorrectWord(word: _word);
-      controller.resetGame(); // Reset game state when starting a new round
+      controller.resetGame(); // Önce oyunu sıfırla
+      controller.setCorrectWord(word: _word); // Sonra yeni kelimeyi ayarla
     });
-    super.initState();
   }
 
   @override
@@ -45,40 +45,57 @@ class _Letter5Part1State extends State<Letter5Part1> {
           Expanded(
             flex: 10,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(55, 5, 55, 5),
+              padding: const EdgeInsets.fromLTRB(50, 5, 50, 5),
               child: const Grid(),
             ),
           ),
           Expanded(
             flex: 5,
             child: controller.gameCompleted
-                ? Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Reset the game before navigating
-                        controller.resetGame();
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Doğru kelime kutuları
+                      if (!controller.gameWon)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: CorrectWordDisplay(
+                              correctWord: controller.correctWord),
+                        ),
 
-                        // Go to the next page
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Letter5Part2()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 40),
-                        textStyle: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                      // "Tekrar Dene" Butonu (Flexible ile taşma önleniyor)
+                      Flexible(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const Letter5Part2()),
+                              );
+
+                              Future.delayed(const Duration(milliseconds: 100),
+                                  () {
+                                controller.resetGame();
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 20, horizontal: 40),
+                              textStyle: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            child: Text(
+                              controller.gameWon
+                                  ? "Tebrikler! ₺${controller.totalEarnings + controller.amount}"
+                                  : "Tekrar Dene! ₺${controller.totalEarnings + controller.amount}",
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text(
-                        controller.gameWon
-                            ? "Tebrikler! ₺${controller.totalEarnings + controller.amount}"
-                            : "Tekrar Dene! ₺${controller.totalEarnings + controller.amount}",
-                      ),
-                    ),
+                    ],
                   )
                 : Container(
                     color: const Color(0xFF000D31),
@@ -142,6 +159,47 @@ class _LogoText extends StatelessWidget {
   }
 }
 
+class CorrectWordDisplay extends StatelessWidget {
+  final String correctWord;
+
+  const CorrectWordDisplay({super.key, required this.correctWord});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 55, vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(5, (index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 3), // Kutular arası boşluk
+            child: Container(
+              width: 52, // Kutuların genişliği
+              height: 52, // Kutuların yüksekliği
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(
+                    0xFF207A2F), // Doğru kelime olduğu için yeşil kutular
+                borderRadius: BorderRadius.circular(4),
+                // border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: Text(
+                correctWord[index].toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32, // Tile widget'ına uygun font büyüklüğü
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
 class _CurrencyContainer extends StatelessWidget {
   const _CurrencyContainer();
 
@@ -158,13 +216,20 @@ class _CurrencyContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
       ),
       alignment: Alignment.center,
-      child: Text(
-        '₺${controller.amount}',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 30,
-          fontFamily: 'Outfit',
-          fontWeight: FontWeight.w800,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        transitionBuilder: (child, animation) {
+          return ScaleTransition(scale: animation, child: child);
+        },
+        child: Text(
+          '₺${controller.amount}',
+          key: ValueKey(controller.amount), // Değer değiştikçe animasyon uygula
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+            fontFamily: 'Outfit',
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );
