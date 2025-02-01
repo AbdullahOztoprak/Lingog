@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Lingog',
-        home: Material(child: HomePage()),
+        home: HomePage(), //
       ),
     );
   }

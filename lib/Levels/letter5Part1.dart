@@ -6,6 +6,7 @@ import 'package:lingogame/components/keyboard_row.dart';
 import 'package:lingogame/components/timer.dart';
 import 'package:lingogame/constants/words.dart';
 import 'package:lingogame/important/controller.dart';
+import 'package:lingogame/important/home_page.dart';
 import 'package:provider/provider.dart';
 
 class Letter5Part1 extends StatefulWidget {
@@ -72,7 +73,7 @@ class _Letter5Part1State extends State<Letter5Part1> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const Letter5Part2()),
+                                    builder: (context) => const HomePage()),
                               );
 
                               Future.delayed(const Duration(milliseconds: 100),
