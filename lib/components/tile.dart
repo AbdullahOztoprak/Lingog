@@ -63,84 +63,77 @@ class _TileState extends State<Tile> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Consumer<Controller>(
       builder: (_, notifier, __) {
-        if (widget.index < notifier.tilesEntered.length) {
+        // İlk kutu için kontrol
+        if (widget.index == 0) {
+          _text =
+              notifier.correctWord.isNotEmpty ? notifier.correctWord[0] : "";
+          _answerStage = AnswerStage.correct; // İlk harf her zaman doğru
+        } else if (widget.index < notifier.tilesEntered.length) {
           _text = notifier.tilesEntered[widget.index].letter;
           _answerStage = notifier.tilesEntered[widget.index].answerStage;
+        } else {
+          // for (int i = 5 * (notifier.currentRow);
+          //     i < 5 * (notifier.currentRow + 1);
+          //     i++) {
+          //   _text = ".";
+          // }
+          _text = "";
+        }
 
-          // Animasyonu tetiklemek için ENTER basıldığında hepsi dönecek
-          if (notifier.checkLine) {
-            final delay = widget.index - (notifier.currentRow - 1) * 5;
-            Future.delayed(Duration(milliseconds: 300 * delay), () {
-              if (mounted) {
-                _animationController.forward();
-              }
-              notifier.checkLine = false;
-            });
+        // Animasyon ve renk güncellemeleri
+        if (notifier.checkLine && widget.index < notifier.tilesEntered.length) {
+          final delay = widget.index - (notifier.currentRow - 1) * 5;
+          Future.delayed(Duration(milliseconds: 300 * delay), () {
+            if (mounted) {
+              _animationController.forward();
+            }
+            notifier.checkLine = false;
+          });
 
-            _updateColors(_answerStage);
-          }
+          _updateColors(_answerStage);
+        }
 
-          return AnimatedBuilder(
-            animation: _animationController,
-            builder: (_, child) {
-              double flip = 0;
-              if (_animationController.value > 0.50) {
-                flip = pi;
-              }
+        return AnimatedBuilder(
+          animation: _animationController,
+          builder: (_, child) {
+            double flip = 0;
+            if (_animationController.value > 0.50) {
+              flip = pi;
+            }
 
-              return Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.003)
-                  ..rotateX(_animationController.value * pi)
-                  ..rotateX(flip),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: flip > 0 ? _backgroundColor : Colors.transparent,
-                    border: Border.all(
-                      color: flip > 0 ? Colors.transparent : _borderColor,
-                    ),
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.003)
+                ..rotateX(_animationController.value * pi)
+                ..rotateX(flip),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: flip > 0 ? _backgroundColor : Colors.transparent,
+                  border: Border.all(
+                    color: flip > 0 ? Colors.transparent : _borderColor,
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: flip > 0
-                          ? Text(
-                              _text,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 48, // Font size for the flipped side
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : Text(
-                              _text,
-                              style: TextStyle(
-                                color: Colors
-                                    .grey[800], // Font color for the front
-                                fontSize: 36, // Font size for the front
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: Text(
+                      _text,
+                      style: TextStyle(
+                        color: flip > 0 ? Colors.white : Colors.grey[800],
+                        fontSize: flip > 0 ? 48 : 36,
+                        fontWeight:
+                            flip > 0 ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
-          );
-        } else {
-          return Container(
-            decoration: BoxDecoration(
-              color: _backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: _borderColor,
               ),
-            ),
-          );
-        }
+            );
+          },
+        );
       },
     );
   }
