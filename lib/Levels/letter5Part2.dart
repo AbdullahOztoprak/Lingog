@@ -72,7 +72,7 @@ class _Letter5Part2State extends State<Letter5Part2> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const HomePage()),
+                                    builder: (context) => const Letter5Part2()),
                               );
 
                               Future.delayed(const Duration(milliseconds: 100),
