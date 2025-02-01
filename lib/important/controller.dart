@@ -11,7 +11,7 @@ class Controller extends ChangeNotifier {
   bool backOrEnterTapped = false;
   bool gameWon = false;
   bool gameCompleted = false;
-  bool notEnoughLetters = false;
+  bool notEnoughLetters = true;
   int amount = 2000;
   int totalEarnings = 0;
 
@@ -66,7 +66,6 @@ class Controller extends ChangeNotifier {
     }
 
     backOrEnterTapped = value == 'ENTER' || value == 'BACK';
-    notEnoughLetters = false;
 
     if (gameTime > 0 && currentRow < 5 && !gameCompleted) {
       if (currentTile == 0 && currentRow == 0) {
@@ -77,6 +76,7 @@ class Controller extends ChangeNotifier {
         notifyListeners(); // UI'yi güncelliyoruz
       } else if (value == 'BACK') {
         _handleBackspace();
+        checkLine = false;
       } else {
         _handleLetterInput(value);
       }
@@ -88,45 +88,55 @@ class Controller extends ChangeNotifier {
   }
 
   void _handleEnter() {
-    if (currentTile == 5 * (currentRow + 1)) {
-      backOrEnterTapped = true;
-      checkLine = true; // Trigger animation for next round
-
+    // Eğer tam 5 harf girilmemişse ENTER çalışmasın
+    if ((currentTile - (currentRow * 5)) < 5) {
+      notEnoughLetters = true;
+      notifyListeners();
+      return;
+    } else {
+      notEnoughLetters = false;
+      // checkLine = true; // Animasyonu başlat
       _processGuess();
 
       _stopTimer();
-      // 2 saniye bekledikten sonra timer'ı sıfırla
       Future.delayed(const Duration(seconds: 1), () {
         if (!gameCompleted) {
           _resetTimer();
           _stopTimer();
-          _resetTimer(); // Timer'ı sıfırlayıp yeniden başlat
+          _resetTimer();
         }
       });
-    } else {
-      notEnoughLetters = true; // Eğer satır eksikse kullanıcıya uyarı ver
     }
   }
 
   void _handleBackspace() {
-    backOrEnterTapped = true;
-    if (currentTile > 5 * currentRow &&
-        !(currentRow == 0 && currentTile == 1)) {
+    if (currentTile > (5 * currentRow)) {
+      backOrEnterTapped = true; // Sadece geri silme için
       currentTile--;
+      notEnoughLetters = currentTile < (5 * (currentRow + 1)); // Doğru kontrol
+
       if (tilesEntered.isNotEmpty) {
         tilesEntered.removeLast();
       }
+      notifyListeners();
     }
   }
 
   void _handleLetterInput(String value) {
-    // İlk kutu doluysa oraya harf yazmayı engelle
+    // Eğer "ENTER" veya "BACK" gelirse harf olarak eklenmesin
+    if (value == "ENTER" || value == "BACK") return;
+
+    // Eğer kutular dolu değilse harfi ekleyelim
     if (currentTile < 5 * (currentRow + 1)) {
       tilesEntered.add(TileModel(
         letter: value.toUpperCase(),
         answerStage: AnswerStage.notAnswered,
       ));
       currentTile++;
+
+      // Eğer satır tamamlandıysa "notEnoughLetters" sıfırlanır
+      notEnoughLetters = (currentTile % 5) != 0;
+      notifyListeners();
     }
   }
 
@@ -179,9 +189,9 @@ class Controller extends ChangeNotifier {
       notifyListeners(); // Animasyonu tetiklemek
     }
 
-    // Animasyonu tetikle
-    checkLine = true; // Şu anki satır için animasyonu başlat
-    notifyListeners(); // Animasyonu tetiklemek
+    // // Animasyonu tetikle
+    // checkLine = true; // Şu anki satır için animasyonu başlat
+    // notifyListeners(); // Animasyonu tetiklemek
     _handleNextRow();
   }
 
@@ -257,7 +267,7 @@ class Controller extends ChangeNotifier {
       }
     }
 
-    checkLine = true; // Trigger animation for the current row
+    // checkLine = true; // Trigger animation for the current row
   }
 
   void _updateKeyColor(String key, KeyboardKeyState newStage) {
@@ -332,7 +342,7 @@ class Controller extends ChangeNotifier {
     currentRow = 0;
     currentTile = 0;
     tilesEntered.clear();
-    notEnoughLetters = false;
+    notEnoughLetters = true;
     checkLine = false;
     backOrEnterTapped = false;
     amount = 2000;
