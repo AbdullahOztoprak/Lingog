@@ -38,9 +38,10 @@ class _GridState extends State<Grid> {
               bool animateDance = false;
               int danceDelay = 1600;
               if (index == (notifier.currentTile - 1) &&
-                  !notifier.backOrEnterTapped) {
+                  !notifier.notEnoughLetters) {
                 animate = true;
               }
+
               if (notifier.gameWon) {
                 for (int i = notifier.tilesEntered.length - 5;
                     i < notifier.tilesEntered.length;
