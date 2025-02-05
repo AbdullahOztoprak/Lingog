@@ -5,8 +5,8 @@ import 'package:lingogame/components/tile.dart';
 import 'package:lingogame/important/controller.dart';
 import 'package:provider/provider.dart';
 
-class Grid extends StatelessWidget {
-  const Grid({super.key});
+class Grid5 extends StatelessWidget {
+  const Grid5({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,13 +19,11 @@ class Grid extends StatelessWidget {
       int wordLength =
           notifier.wordLength; // ✅ Seçili kelime uzunluğu (4,5,6,7)
       double spacing =
-          screenWidth * 0.015; // 📏 Boşlukları dinamik yap (1.5% genişlik)
-      double gridPadding = screenWidth * 0.02; // 📏 Kenar boşluğu (2% genişlik)
+          screenWidth * 0.02; // 📏 Boşlukları dinamik yap (1.5% genişlik)
+      double gridPadding = screenWidth * 0.05; // 📏 Kenar boşluğu (2% genişlik)
 
       // 🟢 Kutu boyutunu **ekran genişliğinin % ile hesapla**
-      double tileSize =
-          (screenWidth - (gridPadding * 2) - (spacing * (wordLength - 1))) /
-              wordLength;
+      double tileSize = (screenWidth) / wordLength;
 
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: gridPadding),
