@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:lingogame/constants/answer_stages.dart';
 import 'package:lingogame/constants/keyboardKeyState.dart';
@@ -14,6 +15,47 @@ class Controller extends ChangeNotifier {
   bool notEnoughLetters = true;
   int amount = 2000;
   int totalEarnings = 0;
+
+  int wordLength; // Seçilen kelime uzunluğu
+  List<String> wordsDictionary = []; // ✅ Global kelime listesi
+
+  Controller({this.wordLength = 5}) {
+    setWordLength(wordLength); // ✅ Başlangıçta kelime listesini güncelle
+  }
+
+  String correctWord = "";
+
+  void setWordLength(int length) {
+    wordLength = length;
+
+    if (length == 4) {
+      wordsDictionary = words4;
+    } else if (length == 5) {
+      wordsDictionary = words5;
+    } else if (length == 6) {
+      wordsDictionary = words6;
+    } else if (length == 7) {
+      wordsDictionary = words7;
+    } else {
+      wordsDictionary = words4;
+    }
+
+    resetGame(); // ✅ Yeni uzunluk seçilince oyunu sıfırla
+    _selectRandomWord();
+    notifyListeners();
+  }
+
+  void _selectRandomWord() {
+    if (wordsDictionary.isNotEmpty) {
+      correctWord = wordsDictionary[Random().nextInt(wordsDictionary.length)]
+          .toUpperCase();
+    } else {
+      correctWord =
+          "ERROR"; // Eğer kelime yoksa hata yerine varsayılan değer koy
+    }
+
+    print("Yeni kelime: $correctWord");
+  }
 
   // keysMap harflerin durumlarını tutan bir map olmal
   Map<String, KeyboardKeyState> keysMap = {};
@@ -33,7 +75,7 @@ class Controller extends ChangeNotifier {
   }
 
   // Kelime ve kutu durumları
-  String correctWord = "";
+  // String correctWord = "";
   int currentTile = 0;
   int currentRow = 0;
   List<TileModel> tilesEntered = [];
@@ -67,7 +109,7 @@ class Controller extends ChangeNotifier {
 
     backOrEnterTapped = value == 'ENTER' || value == 'BACK';
 
-    if (gameTime > 0 && currentRow < 5 && !gameCompleted) {
+    if (gameTime > 0 && currentRow < wordLength && !gameCompleted) {
       if (currentTile == 0 && currentRow == 0) {
         _firstLetter();
       } else if (value == 'ENTER' && notEnoughLetters == false) {
@@ -89,7 +131,7 @@ class Controller extends ChangeNotifier {
 
   void _handleEnter() {
     // Eğer tam 5 harf girilmemişse ENTER çalışmasın
-    if ((currentTile - (currentRow * 5)) < 5) {
+    if ((currentTile - (currentRow * wordLength)) < wordLength) {
       notEnoughLetters = true;
       notifyListeners();
       return;
@@ -110,10 +152,11 @@ class Controller extends ChangeNotifier {
   }
 
   void _handleBackspace() {
-    if (currentTile > (5 * currentRow)) {
+    if (currentTile > (wordLength * currentRow)) {
       backOrEnterTapped = true; // Sadece geri silme için
       currentTile--;
-      notEnoughLetters = currentTile < (5 * (currentRow + 1)); // Doğru kontrol
+      notEnoughLetters =
+          currentTile < (wordLength * (currentRow + 1)); // Doğru kontrol
 
       if (tilesEntered.isNotEmpty) {
         tilesEntered.removeLast();
@@ -127,7 +170,7 @@ class Controller extends ChangeNotifier {
     if (value == "ENTER" || value == "BACK") return;
 
     // Eğer kutular dolu değilse harfi ekleyelim
-    if (currentTile < 5 * (currentRow + 1)) {
+    if (currentTile < wordLength * (currentRow + 1)) {
       tilesEntered.add(TileModel(
         letter: value.toUpperCase(),
         answerStage: AnswerStage.notAnswered,
@@ -135,7 +178,7 @@ class Controller extends ChangeNotifier {
       currentTile++;
 
       // Eğer satır tamamlandıysa "notEnoughLetters" sıfırlanır
-      notEnoughLetters = (currentTile % 5) != 0;
+      notEnoughLetters = (currentTile % wordLength) != 0;
       notifyListeners();
     }
   }
@@ -168,7 +211,7 @@ class Controller extends ChangeNotifier {
     if (guessedWord[0] != correctWord[0]) {
       _endGame(false); // Oyunu sonlandır
       amount = 0;
-    } else if (!words.contains(guessedWord)) {
+    } else if (!wordsDictionary.contains(guessedWord)) {
       _endGame(false); // Oyunu sonlandır
       amount = 0;
     } else if (guessedWord == correctWord) {
@@ -178,9 +221,9 @@ class Controller extends ChangeNotifier {
           guessedWord, remainingCorrect); // Diğer harfler için normal kontrol
       amount -= 400;
 
-      if (currentRow < 4) {
+      if (currentRow < wordLength - 1) {
         currentRow++;
-      } else if (currentRow == 4) {
+      } else if (currentRow == wordLength - 1) {
         _processGuess();
       }
       // Animasyonu tetikle
@@ -197,7 +240,7 @@ class Controller extends ChangeNotifier {
 
   void _handleNextRow() {
     // Satır tamamlandığında bir sonraki satıra geçilir, ancak önceki satır tekrar animasyona girmez.
-    if (currentRow < 5) {
+    if (currentRow < wordLength) {
       checkLine = false; // Animasyon tamamlandı
       notifyListeners(); // Animasyon tamamlandığını bildir
     }
@@ -205,13 +248,16 @@ class Controller extends ChangeNotifier {
 
   String _getCurrentRowWord() {
     return tilesEntered
-        .sublist(currentRow * 5, (currentRow * 5) + 5)
+        .sublist(
+            currentRow * wordLength, (currentRow * wordLength) + wordLength)
         .map((tile) => tile.letter)
         .join();
   }
 
   void _markAllCorrect() {
-    for (int i = currentRow * 5; i < (currentRow * 5) + 5; i++) {
+    for (int i = currentRow * wordLength;
+        i < (currentRow * wordLength) + wordLength;
+        i++) {
       tilesEntered[i].answerStage = AnswerStage.correct;
       _updateKeyColor(tilesEntered[i].letter, KeyboardKeyState.kcorrect);
       checkLine = true; // Trigger animation for next round
@@ -223,7 +269,9 @@ class Controller extends ChangeNotifier {
   }
 
   void _markAllIncorrect() {
-    for (int i = currentRow * 5; i < (currentRow * 5) + 5; i++) {
+    for (int i = currentRow * wordLength;
+        i < (currentRow * wordLength) + wordLength;
+        i++) {
       tilesEntered[i].answerStage = AnswerStage.falseRed;
       _updateKeyColor(tilesEntered[i].letter, KeyboardKeyState.kincorrect);
       checkLine = true; // Trigger animation for next round
@@ -236,8 +284,8 @@ class Controller extends ChangeNotifier {
 
   void _checkLetters(String guessedWord, List<String> remainingCorrect) {
     // 1. Adım: Doğru pozisyon ve harfleri işaretle
-    for (int i = 0; i < 5; i++) {
-      final tileIndex = i + currentRow * 5;
+    for (int i = 0; i < wordLength; i++) {
+      final tileIndex = i + currentRow * wordLength;
 
       // Harf doğru pozisyonda ise yeşil yapılır
       if (guessedWord[i] == correctWord[i]) {
@@ -254,8 +302,8 @@ class Controller extends ChangeNotifier {
     }
 
     // 2. Adım: Yanlış pozisyon ve doğru harfleri işaretle
-    for (int i = 0; i < 5; i++) {
-      final tileIndex = i + currentRow * 5;
+    for (int i = 0; i < wordLength; i++) {
+      final tileIndex = i + currentRow * wordLength;
 
       // Harf doğru kelimede var ama yanlış pozisyondaysa sarı yapılır
       if (remainingCorrect.contains(guessedWord[i]) &&

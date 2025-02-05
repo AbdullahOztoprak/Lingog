@@ -1,16 +1,17 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:lingogame/Levels/letter5Part2.dart';
-import 'package:lingogame/components/grid.dart';
+import 'package:lingogame/Levels/letter4Part2.dart';
+import 'package:lingogame/components/grid4.dart';
 import 'package:lingogame/components/keyboard_row.dart';
 import 'package:lingogame/components/timer.dart';
 import 'package:lingogame/constants/words.dart';
 import 'package:lingogame/important/controller.dart';
-import 'package:lingogame/important/home_page.dart';
 import 'package:provider/provider.dart';
 
 class Letter4Part1 extends StatefulWidget {
-  const Letter4Part1({super.key});
+  final int wordLength; // ✅ Kelime uzunluğu
+
+  const Letter4Part1({super.key, required this.wordLength});
 
   @override
   State<Letter4Part1> createState() => _Letter4Part1State();
@@ -22,32 +23,43 @@ class _Letter4Part1State extends State<Letter4Part1> {
   @override
   void initState() {
     super.initState();
-    final r = Random().nextInt(words.length);
-    _word = words[r];
+
+    // ✅ Seçilen uzunlukta bir kelime al
+    final wordList =
+        words4.where((word) => word.length == widget.wordLength).toList();
+
+    if (wordList.isNotEmpty) {
+      final r = Random().nextInt(wordList.length);
+      _word = wordList[r];
+    } else {
+      _word = "PARA"; // Eğer kelime yoksa varsayılan bir değer koy
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = Provider.of<Controller>(context, listen: false);
-      controller.resetGame(); // Önce oyunu sıfırla
-      controller.setCorrectWord(word: _word); // Sonra yeni kelimeyi ayarla
+      controller.setWordLength(widget.wordLength);
+      controller.resetGame();
+      controller.setCorrectWord(word: _word);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<Controller>(context);
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: const Color(0xff000D31),
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(size),
       body: Column(
         children: [
-          const SizedBox(height: 20),
+          SizedBox(height: size.height * 0.02),
           const Expanded(flex: 4, child: TimerWidget()),
           Expanded(
             flex: 10,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(50, 5, 50, 5),
-              child: const Grid(),
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.1),
+              child: const Grid4(),
             ),
           ),
           Expanded(
@@ -56,37 +68,39 @@ class _Letter4Part1State extends State<Letter4Part1> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Doğru kelime kutuları
                       if (!controller.gameWon)
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          padding: EdgeInsets.symmetric(
+                              vertical: size.height * 0.01),
                           child: CorrectWordDisplay(
                               correctWord: controller.correctWord),
                         ),
-
-                      // "Tekrar Dene" Butonu (Flexible ile taşma önleniyor)
                       Flexible(
                         child: Padding(
-                          padding: const EdgeInsets.all(10.0),
+                          padding: EdgeInsets.all(size.height * 0.015),
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage()),
-                              );
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Letter4Part2(
+                                        wordLength: widget.wordLength),
+                                  ));
+                              controller.resetGame();
 
-                              Future.delayed(const Duration(milliseconds: 100),
-                                  () {
-                                controller.resetGame();
-                              });
+                              // Future.delayed(const Duration(milliseconds: 100),
+                              //     () {
+                              //   controller.resetGame();
+                              // });
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 20, horizontal: 40),
-                              textStyle: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: size.height * 0.025,
+                                  horizontal: size.width * 0.1),
+                              textStyle: TextStyle(
+                                  fontSize: size.width * 0.05,
+                                  fontWeight: FontWeight.bold),
                             ),
                             child: Text(
                               controller.gameWon
@@ -114,14 +128,14 @@ class _Letter4Part1State extends State<Letter4Part1> {
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(Size size) {
     return AppBar(
       backgroundColor: const Color(0xff000D31),
-      title: const Row(
+      title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _LogoText(),
-          _CurrencyContainer(),
+          const _LogoText(),
+          _CurrencyContainer(size),
         ],
       ),
     );
@@ -133,14 +147,15 @@ class _LogoText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return RichText(
-      text: const TextSpan(
+      text: TextSpan(
         children: [
           TextSpan(
             text: 'LINGO',
             style: TextStyle(
-              color: Color(0xFFFBF9F7),
-              fontSize: 45,
+              color: const Color(0xFFFBF9F7),
+              fontSize: size.width * 0.1, // 📌 Dinamik font boyutu
               fontFamily: 'Outfit',
               fontWeight: FontWeight.w900,
             ),
@@ -148,8 +163,8 @@ class _LogoText extends StatelessWidget {
           TextSpan(
             text: 'G',
             style: TextStyle(
-              color: Color(0xFF9F2927),
-              fontSize: 45,
+              color: const Color(0xFF9F2927),
+              fontSize: size.width * 0.1, // 📌 Dinamik font boyutu
               fontFamily: 'Outfit',
               fontWeight: FontWeight.w900,
             ),
@@ -167,29 +182,27 @@ class CorrectWordDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 55, vertical: 5),
+      padding: EdgeInsets.symmetric(horizontal: size.width * 0.10, vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(5, (index) {
+        children: List.generate(correctWord.length, (index) {
           return Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 3), // Kutular arası boşluk
+            padding: EdgeInsets.symmetric(horizontal: size.width * 0.01),
             child: Container(
-              width: 52, // Kutuların genişliği
-              height: 52, // Kutuların yüksekliği
+              width: size.width * 0.12, // 📌 Dinamik genişlik
+              height: size.width * 0.12, // 📌 Dinamik yükseklik
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(
-                    0xFF207A2F), // Doğru kelime olduğu için yeşil kutular
+                color: const Color(0xFF207A2F),
                 borderRadius: BorderRadius.circular(4),
-                // border: Border.all(color: Colors.white, width: 2),
               ),
               child: Text(
                 correctWord[index].toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 32, // Tile widget'ına uygun font büyüklüğü
+                  fontSize: size.width * 0.08, // 📌 Dinamik font
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -202,15 +215,16 @@ class CorrectWordDisplay extends StatelessWidget {
 }
 
 class _CurrencyContainer extends StatelessWidget {
-  const _CurrencyContainer();
+  final Size size;
+  const _CurrencyContainer(this.size);
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<Controller>(context);
 
     return Container(
-      width: 150,
-      height: 45,
+      width: size.width * 0.4,
+      height: size.height * 0.06,
       decoration: BoxDecoration(
         color: const Color(0xFF207A2F),
         border: Border.all(width: 2.5, color: Colors.white),
@@ -224,10 +238,10 @@ class _CurrencyContainer extends StatelessWidget {
         },
         child: Text(
           '₺${controller.amount}',
-          key: ValueKey(controller.amount), // Değer değiştikçe animasyon uygula
-          style: const TextStyle(
+          key: ValueKey(controller.amount),
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 30,
+            fontSize: size.width * 0.08, // 📌 Dinamik font
             fontFamily: 'Outfit',
             fontWeight: FontWeight.w800,
           ),
